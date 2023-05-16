@@ -61,7 +61,6 @@ def GetRndPointsOnSurface(
     xInstanceOrigin: Union[list[float], str, None] = None,
     xObstacles: Optional[CInstances] = None,
 ) -> dict:
-
     """Create the given number of points at random positions on the surface.
        Takes into account the vertex weights of the given vertex group, if set.
        If instances are given to distribute on the surface, the delta to their
@@ -245,18 +244,15 @@ def GetRndPointsOnSurface(
     lPlyIdx: list[int] = list(range(0, iPlyCnt))
 
     for iPntIdx in range(0, iPntCnt):
-
         # print(f"Test point {iPntIdx}")
         vPos_w = None
 
         # Try to find a position as long as there are polynomials
         # to chose from
         while len(lPlyIdx) > 0:
-
             # Find a poly with a selection probability
             # defined the the vertex weights.
             for iTest in range(0, iMaxTrials):
-
                 iPlyIdx = random.choice(lPlyIdx)
 
                 fWeight = xPolys.GetPolyWeight(iPlyIdx)
@@ -305,7 +301,7 @@ def GetRndPointsOnSurface(
                 and bHasAngleConstraint is False
                 and bUseCameraFov is False
                 and bUseBoundBox is False
-            ) or (bUseCameraFov is True and bFovOK is True and len(dicPnts) == 0):
+            ) or (bUseCameraFov is True and bFovOK is True and len(xObstacles) == 0 and len(dicPnts) == 0):
                 break
             # endif
 
@@ -459,7 +455,6 @@ def GetRndPointsOnSurfaceUniformly(
     xInstanceOrigin: Union[list[float], str, None] = None,
     xObstacles: Optional[CInstances] = None,
 ) -> dict:
-
     """Create the given number of points at random positions on the surface.
        Takes into account the vertex weights of the given vertex group, if set.
        If instances are given to distribute on the surface, the delta to their
@@ -643,7 +638,6 @@ def GetRndPointsOnSurfaceUniformly(
     lPlyIdx: list[int] = list(range(0, iPlyCnt))
 
     for iPntIdx in range(0, iPntCnt):
-
         # print(f"Test point {iPntIdx}")
         vPos_w = None
 
@@ -651,7 +645,6 @@ def GetRndPointsOnSurfaceUniformly(
         # to chose from
         iAttempt = 0
         while iAttempt < iMaxTrials:
-
             # Evaluate position
             vPos_w = mathutils.Vector(xPolys.SampleUniformlyByWeightAndArea())
             # print(f"vPos_w: {vPos_w}")
@@ -689,7 +682,7 @@ def GetRndPointsOnSurfaceUniformly(
                 and bHasAngleConstraint is False
                 and bUseCameraFov is False
                 and bUseBoundBox is False
-            ) or (bUseCameraFov is True and bFovOK is True and len(dicPnts) == 0):
+            ) or (bUseCameraFov is True and bFovOK is True and len(xObstacles) == 0 and len(dicPnts) == 0):
                 break
             # endif
 
