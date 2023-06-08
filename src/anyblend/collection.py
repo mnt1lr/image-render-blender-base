@@ -80,7 +80,6 @@ def GetRootCollection(_xContext):
 
 #################################################################
 def GetCollection(_sName: str, bDoThrow: bool = False) -> bpy.types.Collection:
-
     clnAct = bpy.data.collections.get(_sName)
     if clnAct is None and bDoThrow:
         raise RuntimeError("Collection '{}' not found".format(_sName))
@@ -91,9 +90,9 @@ def GetCollection(_sName: str, bDoThrow: bool = False) -> bpy.types.Collection:
 
 # enddef
 
+
 #################################################################
 def _DoGetParentCollection(_clnStart, _clnX):
-
     if _clnX.name in _clnStart.children:
         return _clnStart
     # endif
@@ -114,9 +113,9 @@ def _DoGetParentCollection(_clnStart, _clnX):
 
 # enddef
 
+
 #################################################################
 def GetParentCollection(_clnX, *, _xContext=None):
-
     if _xContext is None:
         _xContext = bpy.context
     # endif
@@ -126,6 +125,7 @@ def GetParentCollection(_clnX, *, _xContext=None):
 
 
 # enddef
+
 
 # ###################################################################################
 def GetCollectionObjects(
@@ -173,9 +173,9 @@ def GetCollectionObjects(
 
 # enddef
 
+
 #################################################################
 def FindObjectInCollection(_clX, _objX):
-
     if _objX.name in _clX.objects:
         return _clX, _objX
     # endif
@@ -195,7 +195,6 @@ def FindObjectInCollection(_clX, _objX):
 
 #################################################################
 def FindCollectionOfObject(_xContext, _objX):
-
     clRoot = GetRootLayerCollection(_xContext).collection
     clX, objX = FindObjectInCollection(clRoot, _objX)
 
@@ -207,7 +206,6 @@ def FindCollectionOfObject(_xContext, _objX):
 
 #################################################################
 def _DoFindParentCollectionOfCollection(_clnParent, _clnChild):
-
     if _clnChild.name in _clnParent.children:
         return _clnParent, _clnChild
     # endif
@@ -224,9 +222,9 @@ def _DoFindParentCollectionOfCollection(_clnParent, _clnChild):
 
 # enddef
 
+
 #################################################################
 def FindParentCollectionOfCollection(_xContext, _clnChild) -> bpy.types.Collection:
-
     clnRoot = GetRootLayerCollection(_xContext).collection
     clnParent, clnChild = _DoFindParentCollectionOfCollection(clnRoot, _clnChild)
 
@@ -266,16 +264,16 @@ def FindLayerCollection(_xLayCol, _sName):
 
 #################################################################
 def SetActiveCollection(_xContext, _sName):
-
     xLC = FindLayerCollection(_xContext.view_layer.layer_collection, _sName)
     if xLC is not None:
         _xContext.view_layer.active_layer_collection = xLC
     else:
-        raise Exception("Collection '{0}' not found.".format(_sName))
+        raise Exception("Layer collection '{0}' not found.".format(_sName))
     # endif
 
 
 # enddef
+
 
 #################################################################
 def IsExcluded(_xContext, _sName):
@@ -285,22 +283,22 @@ def IsExcluded(_xContext, _sName):
 
 # enddef
 
+
 #################################################################
 def ExcludeCollection(_xContext, _sName, _bExclude=True):
-
     xLC = FindLayerCollection(_xContext.view_layer.layer_collection, _sName)
     if xLC is not None:
         xLC.exclude = _bExclude
     else:
-        raise Exception("Collection '{0}' not found.".format(_sName))
+        raise Exception("Layer collection '{0}' not found.".format(_sName))
     # endif
 
 
 # enddef
 
+
 #################################################################
 def ProvideCollection(_xContext, _sName, bActivate=True, clnParent=None, bEnsureLayerCollectionExists=False):
-
     # There was a case, where the collection already existed but without
     # an associated layer collection. In this case, we need to delete the
     # collection and re-create it.
@@ -329,7 +327,6 @@ def ProvideCollection(_xContext, _sName, bActivate=True, clnParent=None, bEnsure
 
 #################################################################
 def CreateCollection(_xContext, _sName, bActivate=True, clnParent=None):
-
     if clnParent is None:
         xColAct = GetActiveCollection(_xContext)
     else:
@@ -353,7 +350,6 @@ def CreateCollection(_xContext, _sName, bActivate=True, clnParent=None):
 def CreateCollectionHierarchy(
     _xContext: bpy.types.Context, _lClnHierarchy: list[str], bActivate: bool = True, bCreateHierarchyNames: bool = True
 ) -> bpy.types.Collection:
-
     if not isinstance(_lClnHierarchy, list):
         raise Exception("Collection hierarchy must be a list of string")
     # endif
@@ -361,6 +357,10 @@ def CreateCollectionHierarchy(
     if len(_lClnHierarchy) == 0:
         return
     # endif
+
+    # Make the root layer collection active, so that CreateCollection() creates
+    # layer collection in root layer collection.
+    MakeRootLayerCollectionActive(_xContext)
 
     # Get container of collections
     xClns = bpy.data.collections
@@ -380,7 +380,6 @@ def CreateCollectionHierarchy(
     sFullClnName = sTopClnName
 
     for sClnName in _lClnHierarchy[1:]:
-
         sFullClnName += "." + sClnName
         if bCreateHierarchyNames:
             sNewClnName = sFullClnName
@@ -417,7 +416,6 @@ def CreateCollectionHierarchy(
 
 #################################################################
 def MoveObjectToActiveCollection(_xContext, _objX, bMoveObjectHierarchy=True):
-
     clnAct = GetActiveCollection(_xContext)
     clnObj = FindCollectionOfObject(_xContext, _objX)
 
@@ -450,7 +448,6 @@ def AddObjectToCollectionHierarchy(
     bCreateHierarchyNames=True,
     bMoveObjectHierarchy=True,
 ):
-
     """Generates hierarchy of collections from lCollectionHierarchy if not
     already existing. Unlinks object from collection it is in and links it to last level of hierarchy
 
@@ -481,7 +478,6 @@ def AddObjectToCollectionHierarchy(
 
 #################################################################
 def _RemoveCollection(xColl, bRecursive=True, bRemoveObjects=True):
-
     # print(f"> Cln: {xColl.name}")
     if bRemoveObjects:
         lObj = [x for x in xColl.objects if x.users <= 1]
@@ -541,7 +537,6 @@ def RemoveCollection(
 
 #################################################################
 def _RemoveCollectionObjects(xColl, bRecursive=True):
-
     lObj = [x for x in xColl.objects if x.users <= 1]
     for xObj in lObj:
         bpy.data.objects.remove(xObj)
@@ -560,7 +555,6 @@ def _RemoveCollectionObjects(xColl, bRecursive=True):
 
 #################################################################
 def RemoveCollectionObjects(_sName, bRecursive=True, bRemoveOrphaned=True, bIgnoreFakeUser=False):
-
     xColl = bpy.data.collections.get(_sName)
     if xColl is None:
         raise Exception("Collection '{0}' not found.".format(_sName))
@@ -582,7 +576,6 @@ def RemoveCollectionObjects(_sName, bRecursive=True, bRemoveOrphaned=True, bIgno
 
 #################################################################
 def FindOrphaned(lExclude=None, bIgnoreFakeUser=False):
-
     lData = [
         bpy.data.objects,
         bpy.data.meshes,
@@ -619,7 +612,6 @@ def FindOrphaned(lExclude=None, bIgnoreFakeUser=False):
 
 #################################################################
 def RemoveOrphaned(lExclude=None, bIgnoreFakeUser=False):
-
     # Loop over all given data sets until no more orphans are found
     while True:
         bHasOrphans = False
@@ -628,7 +620,6 @@ def RemoveOrphaned(lExclude=None, bIgnoreFakeUser=False):
 
         # Loop over data sets
         for dicOrphan in lOrphanList:
-
             xSrc = dicOrphan.get("xSrc")
             lOrphan = dicOrphan.get("lOrphan")
 
