@@ -710,6 +710,7 @@ def ImportObjectObj(
     _sSetOriginType: str = None,
     _sSetOriginCenter: str = None,
     _lLocation: list[float] = None,
+    _lRotationEuler: list[float] = None,
 ):
 
     objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
@@ -727,6 +728,13 @@ def ImportObjectObj(
             raise RuntimeError(f"Invalid location for object: {_lLocation}")
         # endif
         objIn.location = mathutils.Vector(_lLocation)
+    # endif
+
+    if isinstance(_lRotationEuler, list):
+        if len(_lRotationEuler) != 3:
+            raise RuntimeError(f"Invalid rotation for object: {_lRotationEuler}")
+        # endif
+        objIn.rotation_euler = mathutils.Vector(_lRotationEuler)
     # endif
 
     if isinstance(_fScaleFactor, float) or _bDoSetOrigin is True:
