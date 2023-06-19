@@ -30,9 +30,13 @@ import bpy
 import bmesh
 
 import mathutils
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 from pathlib import Path
 from .mesh.types import CMeshData
+from .node import shader as nsh
+from .node import align as nalign
+from .node.shader import utils as nutils
+from .util.node import GetByLabelOrId as GetNodeByLabelOrId
 
 # import sys
 # import copy
@@ -45,11 +49,11 @@ import numpy as np
 from . import collection
 from . import viewlayer
 from . import ops_object as ops
+from . import ops_image
 
 
 ################################################################################
 def CreateObject(_xContext, _sName, bActivate=False, xCollection=None):
-
     if xCollection is None:
         xCln = collection.GetActiveCollection(_xContext)
     else:
@@ -79,7 +83,6 @@ def CreateMeshObject(
     _xCollection: Optional[bpy.types.Collection] = None,
     _xContext: Optional[bpy.types.Context] = None,
 ) -> bpy.types.Object:
-
     xCtx: bpy.types.Context = None
     if _xContext is None:
         xCtx = bpy.context
@@ -120,7 +123,6 @@ def CreateObjectFromMeshData(
     _xCollection: Optional[bpy.types.Collection] = None,
     _xContext: bpy.types.Context = None,
 ) -> bpy.types.Object:
-
     objX = CreateMeshObject(_sName, _bActivate=_bActivate, _xCollection=_xCollection, _xContext=_xContext)
     meshX: bpy.types.Mesh = objX.data
 
@@ -152,7 +154,6 @@ def CreateObjectFromMeshData(
 
 ################################################################################
 def CreateEmpty(_xContext, _sName, bActivate=False, xCollection=None):
-
     if xCollection is None:
         xCln = collection.GetActiveCollection(_xContext)
     else:
@@ -186,7 +187,6 @@ def CreateText(
     _xCollection: bpy.types.Collection = None,
     _bActivate: bool = False,
 ):
-
     xCtx: bpy.types.Context = bpy.context
     if _xContext is not None:
         xCtx = _xContext
@@ -239,7 +239,6 @@ def CreateText(
 
 # #####################################################
 def _DoCopyObject(_objTop, *, _clnX, _bLinked=False, _bHierarchy=False):
-
     objX = _objTop.copy()
     if _bLinked is False and _objTop.data is not None:
         objX.data = _objTop.data.copy()
@@ -258,9 +257,9 @@ def _DoCopyObject(_objTop, *, _clnX, _bLinked=False, _bHierarchy=False):
 
 # enddef
 
+
 # #####################################################
 def CopyObject(_objTop, *, _bLinked=False, _bHierarchy=False, _clnTarget=None):
-
     if _clnTarget is None:
         clnX = collection.FindCollectionOfObject(bpy.context, _objTop)
     else:
@@ -277,7 +276,6 @@ def CopyObject(_objTop, *, _bLinked=False, _bHierarchy=False, _clnTarget=None):
 
 # #####################################################
 def CopyCollection(_clnX, *, _bLinked=False, _bObjectHierarchy=True, _clnTarget=None, _xContext=None):
-
     if _xContext is None:
         xCtx = bpy.context
     else:
@@ -311,7 +309,6 @@ def CopyCollection(_clnX, *, _bLinked=False, _bObjectHierarchy=True, _clnTarget=
 
 ####################################################################
 def CreateEvaluatedMeshObject(_xContext, _objMesh, _sNewName):
-
     # https://docs.blender.org/api/current/bpy.types.Depsgraph.html
     xDG = _xContext.evaluated_depsgraph_get()
 
@@ -353,7 +350,6 @@ def CreateEvaluatedMeshObject(_xContext, _objMesh, _sNewName):
 
 ################################################################################
 def Hide(_objX, bHide=None, bHideRender=None, bHideInAllViewports=None, bRecursive=True):
-
     if isinstance(bHide, bool):
         _objX.hide_set(bHide)
     # endif
@@ -380,6 +376,7 @@ def Hide(_objX, bHide=None, bHideRender=None, bHideInAllViewports=None, bRecursi
 
 # enddef
 
+
 ################################################################################
 def GetActiveObject(_xContext):
     return _xContext.active_object
@@ -387,9 +384,9 @@ def GetActiveObject(_xContext):
 
 # enddef
 
+
 ################################################################################
 def ParentObject(_objParent, _objChild, bKeepTransform=True, bKeepRelTransform=False):
-
     # sys.stderr.write(f"\n>>>>> bKeepTransform: {bKeepTransform}\n")
     # sys.stderr.write(f"\n>>>>> bKeepRelTransform: {bKeepRelTransform}\n")
     # sys.stderr.flush()
@@ -423,7 +420,6 @@ def ParentObjectList(_objParent, _lobjChild, bKeepTransform=True):
 ######################################################
 # Get list of names of children of Object
 def GetObjectChildrenNames(_objMain, bRecursive=False):
-
     lNames = []
     for objChild in _objMain.children:
         lNames.append(objChild.name)
@@ -463,7 +459,6 @@ def RemoveObjectHierarchy(_objMain):
 
 ################################################################################
 def ScaleObject(_objX, _fScale: float, *, _bApply: bool = False):
-
     if _bApply is True and hasattr(_objX.data, "transform"):
         # print(f"Scaling '{_objX.name}' with factor {_fScale}")
 
@@ -488,7 +483,6 @@ def ScaleObject(_objX, _fScale: float, *, _bApply: bool = False):
 def GetMeshVex(
     _objX: bpy.types.Object, *, sFrame: str = "WORLD", bUseParentFrame: bool = True, bEvaluated: bool = False
 ) -> np.ndarray:
-
     if _objX.type != "MESH":
         raise Exception("Object '{0}' is not a mesh object".format(_objX.name))
     # endif
@@ -587,7 +581,6 @@ def GetVertexWeights(_objX, _sGrpName):
 
 ######################################################
 def GetMeshObjectDist(*, objTrg, objX, vDir):
-
     matT = objTrg.matrix_world.inverted() @ objX.matrix_world
     vDir_loc = (objTrg.matrix_world.inverted().to_3x3() @ vDir).normalized()
 
@@ -627,7 +620,6 @@ def GetMeshObjectDist(*, objTrg, objX, vDir):
 
 ######################################################
 def GetMeshObjectHierarchy(_objTop):
-
     lObjects = []
     if _objTop.type == "MESH":
         lObjects.append(_objTop)
@@ -642,9 +634,9 @@ def GetMeshObjectHierarchy(_objTop):
 
 # enddef
 
+
 ######################################################
 def GetObjectDeltaToMesh(*, objTrg, objX, vDir, sMode="ABOVE"):
-
     lAllowedModes = ["CLOSEST", "ABOVE", "BELOW"]
     if sMode not in lAllowedModes:
         raise RuntimeError("sMode must be one of 'CLOSEST', 'ABOVE' or 'BELOW'")
@@ -665,7 +657,6 @@ def GetObjectDeltaToMesh(*, objTrg, objX, vDir, sMode="ABOVE"):
 
     # loop over all objects
     for objY in lObjects:
-
         objY_eval = objY.evaluated_get(xDG)
         fMin, fMax = GetMeshObjectDist(objTrg=objTrg_eval, objX=objY_eval, vDir=vDir)
 
@@ -712,7 +703,6 @@ def ImportObjectObj(
     _lLocation: list[float] = None,
     _lRotationEuler: list[float] = None,
 ):
-
     objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
 
     if isinstance(_fScaleFactor, float):
@@ -750,9 +740,9 @@ def ImportObjectObj(
 
 # enddef
 
+
 ################################################################################
 def SmoothObjectSurface_VoxelRemesh(_objIn: bpy.types.Object, _fVoxelSize: float):
-
     objInCopy = ops.Duplicate(_objIn)
 
     modRemesh = ops.AddModifier_Remesh(objInCopy)
@@ -764,6 +754,264 @@ def SmoothObjectSurface_VoxelRemesh(_objIn: bpy.types.Object, _fVoxelSize: float
     ops.ApplyModifier(_objIn, modShrink)
 
     bpy.data.objects.remove(objInCopy)
+
+
+# enddef
+
+
+################################################################################
+def VoxelRemesh_BakeTexture(
+    *,
+    _objIn: bpy.types.Object,
+    _fRemeshVoxelSize: float,
+    _bRemeshSmoothShade: bool = True,
+    _bDoSmoothSurface: bool = True,
+    _iSmoothIterations: int = 3,
+    _fSmoothFactor: float = 0.5,
+    _iMultiResIterCnt: int = 2,
+    _sLowPolyObjName: Optional[str] = None,
+    _tBakedTexRes: Tuple[int, int] = (2048, 2048),
+    _fBakedTexCageExtrusion: float = 0.1,
+    _pathTex: Optional[Path] = None,
+):
+    if _objIn is None or not isinstance(_objIn, bpy.types.Object) or _objIn.type != "MESH":
+        raise RuntimeError("Given object argument is not a Blender mesh object")
+    # endif
+
+    tNodeSpace = (70, 25)
+    tNodeSpaceSmall = (30, 15)
+
+    mshIn: bpy.types.Mesh = _objIn.data
+    mshIn.use_auto_smooth = False
+
+    objLp: bpy.types.Object = ops.Duplicate(_objIn)
+    if _sLowPolyObjName is not None and isinstance(_sLowPolyObjName, str):
+        objLp.name = _sLowPolyObjName
+    # endif
+    mshLp: bpy.types.Mesh = objLp.data
+    mshLp.use_auto_smooth = False
+
+    # ########################################################################################
+    # Remesh & Smooth to create low poly object
+
+    modRemesh = ops.AddModifier_Remesh(objLp)
+    modRemesh.voxel_size = _fRemeshVoxelSize
+    modRemesh.use_smooth_shade = _bRemeshSmoothShade
+    ops.ApplyModifier(objLp, modRemesh)
+
+    if _bDoSmoothSurface is True:
+        modSmooth: bpy.types.SmoothModifier = ops.AddModifier(objLp, "SMOOTH")
+        modSmooth.iterations = _iSmoothIterations
+        modSmooth.factor = _fSmoothFactor
+        ops.ApplyModifier(objLp, modSmooth)
+    # endif
+
+    # add multires modifier to active object
+    modMultiRes = ops.AddModifier_MultiRes(objLp)
+
+    # add shrinkwrap modifier
+    modShrinkWrap = ops.AddModifier_Shrinkwrap(objLp)
+    modShrinkWrap.wrap_method = "PROJECT"
+    modShrinkWrap.use_negative_direction = True
+    modShrinkWrap.use_positive_direction = True
+    modShrinkWrap.target = _objIn
+
+    # Apply multires subdivision for low poly object
+    ops.DoMultiResSubdivide(objLp, modMultiRes, _iMultiResIterCnt, _sMode="CATMULL_CLARK")
+
+    # Set viewport multires level to 0
+    # INFO: The normal baking creates a normal map that is the difference between the viewport level
+    #       and the render level.
+    modMultiRes.levels = 0
+
+    ops.ApplyModifier(objLp, modShrinkWrap)
+
+    # ########################################################################################
+    # Create new material for objLp
+    # DO NOT connect texture nodes to Prinicipled Shader yet! Otherwise baking throws recursion warning.
+    matLp = ops.SetNewMaterial(objLp, _sMaterialName=f"{objLp.name}_baked")
+    sMatName = matLp.name
+
+    # Create images
+    iResX, iResY = _tBakedTexRes
+    imgDiffuse = bpy.data.images.new(f"{sMatName}_diffuse", iResX, iResY, alpha=True, float_buffer=False)
+    imgNormal = bpy.data.images.new(f"{sMatName}_normal", iResX, iResY, alpha=False, float_buffer=True)
+
+    if _pathTex is not None:
+        imgDiffuse.filepath_raw = (_pathTex / f"{imgDiffuse.name}.png").as_posix()
+        imgNormal.filepath_raw = (_pathTex / f"{imgNormal.name}.png").as_posix()
+    # endif
+
+    imgDiffuse.use_fake_user = True
+    imgNormal.use_fake_user = True
+
+    # Create texture nodes
+    ntMain = matLp.node_tree
+    nodShader = ntMain.nodes.get("Principled BSDF")
+
+    sklTexDiff = nsh.tex.Image(
+        ntMain,
+        "Diffuse",
+        None,
+        imgDiffuse.name,
+        eExtension=nsh.tex.EExtension.EXTEND,
+        eProjection=nsh.tex.EProjection.FLAT,
+        eInterpolation=nsh.tex.EInterpolation.LINEAR,
+        eColorSpace=nsh.tex.EColorSpace.SRGB,
+        eAlphaMode=nsh.tex.EAlphaMode.STRAIGHT,
+    )
+    nalign.Relative(nodShader, (-1, 0), sklTexDiff, (1, 0), tNodeSpace)
+
+    sklTexNorm = nsh.tex.Image(
+        ntMain,
+        "Normal",
+        None,
+        imgNormal.name,
+        eExtension=nsh.tex.EExtension.EXTEND,
+        eProjection=nsh.tex.EProjection.FLAT,
+        eInterpolation=nsh.tex.EInterpolation.LINEAR,
+        eColorSpace=nsh.tex.EColorSpace.NON_COLOR,
+        eAlphaMode=nsh.tex.EAlphaMode.NONE,
+    )
+    nalign.Relative(sklTexDiff, (0, 2), sklTexNorm, (0, 0), tNodeSpace)
+
+    sklNormalMap = nsh.vector.NormalMap(ntMain, "Normal Map", sklTexNorm["Color"])
+    nalign.Relative(sklTexNorm, (1, 0), sklNormalMap, (0, 0), tNodeSpaceSmall)
+
+    # ########################################################################################
+    # UV Unwrap
+    ops.SmartUvUnwrap(objLp, _fAngleLimit_deg=66.0, _fIslandMargin=0.01)
+
+    # #######################################################################
+    # Texture baking
+    # https://docs.blender.org/api/current/bpy.ops.object.html
+
+    # Make original and lp shade smooth
+    with ops._TempContextForObject(objLp):
+        bpy.ops.object.shade_smooth()
+    # endwith
+    with ops._TempContextForObject(_objIn):
+        bpy.ops.object.shade_smooth()
+    # endwith
+
+    xScene = bpy.context.scene
+    xRender = xScene.render
+    xCycles = xScene.cycles
+
+    # Store Render Values
+    dicRender = {
+        "engine": xRender.engine,
+        "use_bake_multires": xRender.use_bake_multires,
+        "bake/cage_extrusion": xRender.bake.cage_extrusion,
+        "bake_type": xRender.bake_type,
+    }
+
+    # Store Cycles Values
+    dicCycles = {
+        "device": xCycles.device,
+        "preview_samples": xCycles.preview_samples,
+        "samples": xCycles.samples,
+        "use_denoising": xCycles.use_denoising,
+        "bake_type": xCycles.bake_type,
+    }
+
+    # Set general baking values
+    xRender.engine = "CYCLES"
+    xCycles.device = "GPU"
+    xCycles.preview_samples = 16
+    xCycles.samples = 16
+    xCycles.use_denoising = True
+
+    matLp = mshLp.materials[0]
+    nodTexNorm: bpy.types.Node = GetNodeByLabelOrId(matLp.node_tree, "Normal")
+    nodTexDiff: bpy.types.Node = GetNodeByLabelOrId(matLp.node_tree, "Diffuse")
+
+    # #################################################
+    # Bake DIFFUSE
+    # select both objOrig, objLP, but make objLp active
+    bpy.ops.object.select_all(action="DESELECT")
+    _objIn.hide_render = False
+    _objIn.hide_set(False)
+    _objIn.select_set(True)
+    objLp.select_set(True)
+    objLp.hide_render = False
+    bpy.context.view_layer.objects.active = objLp
+
+    nodTexDiff.select = True
+    matLp.node_tree.nodes.active = nodTexDiff
+    nodTexNorm.select = False
+
+    xRender.use_bake_multires = False
+    xRender.bake.cage_extrusion = _fBakedTexCageExtrusion
+    xCycles.bake_type = "DIFFUSE"
+
+    bpy.ops.object.bake(type="DIFFUSE", use_selected_to_active=True, pass_filter={"COLOR"})
+
+    # ensure that low poly object is active and selected
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = objLp
+    objLp.select_set(True)
+
+    _objIn.hide_render = True
+    _objIn.hide_set(True)
+
+    # #################################################
+    # Bake NORMALS
+    # Settings for multires bake
+    xRender.use_bake_multires = True
+    xRender.bake_type = "NORMALS"
+
+    for nodX in matLp.node_tree.nodes:
+        nodX.select = False
+    # endfor
+    matLp.node_tree.nodes.active = nodTexNorm
+    nodTexNorm.select = True
+
+    bpy.ops.object.bake(type="NORMAL")
+
+    # #################################################
+    # Restore render and Cycles values
+    xRender.engine = dicRender["engine"]
+    xRender.use_bake_multires = dicRender["use_bake_multires"]
+    xRender.bake.cage_extrusion = dicRender["bake/cage_extrusion"]
+    xRender.bake_type = dicRender["bake_type"]
+
+    xCycles.device = dicCycles["device"]
+    xCycles.preview_samples = dicCycles["preview_samples"]
+    xCycles.samples = dicCycles["samples"]
+    xCycles.use_denoising = dicCycles["use_denoising"]
+    xCycles.bake_type = dicCycles["bake_type"]
+
+    # #######################################################################
+    # Save texture images to disk or store in Blender file
+
+    if _pathTex is not None:
+        # Store texture images if a path is given
+        imgDiffuse.save()
+        imgNormal.save()
+
+    else:
+        # Pack textures in Blender file
+        ops_image.Pack(imgDiffuse)
+        ops_image.Pack(imgNormal)
+    # endif
+
+    # #######################################################################
+    # Connect shader nodes in Material shader
+    ntMain = matLp.node_tree
+
+    nodNormMap: bpy.types.Node = GetNodeByLabelOrId(matLp.node_tree, "Normal Map")
+    nodTexDiff: bpy.types.Node = GetNodeByLabelOrId(matLp.node_tree, "Diffuse")
+    nodShader: bpy.types.ShaderNodeBsdfPrincipled = GetNodeByLabelOrId(matLp.node_tree, "Principled BSDF")
+
+    nutils._ConnectWithSocket(ntMain, nodShader.inputs["Normal"], nodNormMap.outputs["Normal"])
+    nutils._ConnectWithSocket(ntMain, nodShader.inputs["Base Color"], nodTexDiff.outputs["Color"])
+
+    # #######################################################################
+    # Clean-up
+    objLp.modifiers.clear()
+
+    return objLp
 
 
 # enddef
