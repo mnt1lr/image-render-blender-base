@@ -69,9 +69,18 @@ def SetOriginByType(_objX: bpy.types.Object, *, _sOriginType: str, _sCenter: str
 
 
 ######################################################
-def ApplyTransforms(_objX: bpy.types.Object):
+def ApplyTransforms(
+    _objX: bpy.types.Object,
+    *,
+    _bLocation: bool = True,
+    _bRotation: bool = True,
+    _bScale: bool = True,
+    _bProperties: bool = True,
+):
     with _TempContextForObject(_objX):
-        setRes = bpy.ops.object.transform_apply()
+        setRes = bpy.ops.object.transform_apply(
+            location=_bLocation, rotation=_bRotation, scale=_bScale, properties=_bProperties
+        )
         if setRes.pop() != "FINISHED":
             raise RuntimeError(f"Error applying transformations to object '{_objX.name}'")
         # endif
@@ -299,6 +308,39 @@ def ImportToScene_Obj(_pathFile: Path) -> bpy.types.Object:
     viewlayer.Update()
 
     return objIn
+
+
+# enddef
+
+
+######################################################
+def ExportFromScene_Obj(_pathFile: Path, _objX: bpy.types.Object):
+    with _TempContextForObject(_objX):
+        bpy.ops.export_scene.obj(
+            filepath=_pathFile.as_posix(),
+            check_existing=False,
+            use_selection=True,
+            use_animation=False,
+            use_mesh_modifiers=True,
+            use_edges=True,
+            use_smooth_groups=False,
+            use_smooth_groups_bitflags=False,
+            use_normals=True,
+            use_uvs=True,
+            use_materials=True,
+            use_triangles=False,
+            use_nurbs=False,
+            use_vertex_groups=False,
+            use_blen_objects=True,
+            group_by_material=False,
+            group_by_object=False,
+            keep_vertex_order=False,
+            global_scale=1,
+            path_mode="AUTO",
+            axis_forward="-Z",
+            axis_up="Y",
+        )
+    # endwith
 
 
 # enddef
