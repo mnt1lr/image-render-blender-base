@@ -39,7 +39,6 @@ from . import utils as nutils
 ###################################################################
 # Add shader node: Separate XYZ
 def SeparateXYZ(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeSeparateXYZ")
     nodX.label = sTitle
 
@@ -54,7 +53,6 @@ def SeparateXYZ(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.ty
 ###################################################################
 # Add shader node: Combine XYZ
 def CombineXYZ(xSNT: bpy.types.NodeTree, sTitle: str, xX: TData, xY: TData, xZ: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeCombineXYZ")
     nodX.label = sTitle
 
@@ -71,7 +69,6 @@ def CombineXYZ(xSNT: bpy.types.NodeTree, sTitle: str, xX: TData, xY: TData, xZ: 
 ###################################################################
 # Add shader node: Add vectors
 def Add(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -89,7 +86,6 @@ def Add(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.type
 ###################################################################
 # Add shader node: Subtract vectors
 def Subtract(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -107,7 +103,6 @@ def Subtract(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy
 ###################################################################
 # Add shader node: Dot product
 def Dot(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -125,7 +120,6 @@ def Dot(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.type
 ###################################################################
 # Add shader node: Project
 def Project(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -143,7 +137,6 @@ def Project(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xB: TData) -> bpy.
 ###################################################################
 # Add shader node: Normalize
 def Normalize(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -160,7 +153,6 @@ def Normalize(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData) -> bpy.types.Nod
 ###################################################################
 # Add shader node: Normalize
 def Length(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -178,7 +170,6 @@ def Length(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData) -> bpy.types.NodeSo
 # Add shader node: Transform vector from world to object coordinate system
 # !! This converts a vector (i.e. a direction) not taking into account the object's origin.
 def TransformWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -198,7 +189,6 @@ def TransformWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData
 # Add shader node: Transform vector from object to world coordinate system
 # !! This converts a vector (i.e. a direction) not taking into account the object's origin.
 def TransformObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -218,7 +208,6 @@ def TransformObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData
 # Add shader node: Transform vector from world to object coordinate system
 # !! This converts a vector (i.e. a direction) not taking into account the object's origin.
 def TransformNormalWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -238,7 +227,6 @@ def TransformNormalWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector:
 # Add shader node: Transform vector from object to world coordinate system
 # !! This converts a vector (i.e. a direction) not taking into account the object's origin.
 def TransformNormalObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -258,7 +246,6 @@ def TransformNormalObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector:
 # Add shader node: Transform vector from world to object coordinate system
 # !! This converts a point, taking into account the object's origin.
 def TransformPointWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -278,7 +265,6 @@ def TransformPointWorldToObject(xSNT: bpy.types.NodeTree, sTitle: str, xVector: 
 # Add shader node: Transform vector from object to world coordinate system
 # !! This converts a point, taking into account the object's origin.
 def TransformPointObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorTransform")
 
     nodX.label = sTitle
@@ -297,7 +283,6 @@ def TransformPointObjectToWorld(xSNT: bpy.types.NodeTree, sTitle: str, xVector: 
 ###################################################################
 # Add shader node: Project
 def Scale(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xFactor: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeVectorMath")
 
     nodX.label = sTitle
@@ -317,7 +302,6 @@ def Scale(xSNT: bpy.types.NodeTree, sTitle: str, xA: TData, xFactor: TData) -> b
 def LinComb2(
     xSNT: bpy.types.NodeTree, sTitle: str, xVecA: TData, xFacA: TData, xVecB: TData, xFacB: TData
 ) -> bpy.types.NodeSocket:
-
     ngVecLC = nutils.Group(xSNT, GrpVecLinComb.Create2())
     ngVecLC.label = sTitle
 
@@ -328,6 +312,21 @@ def LinComb2(
     nutils._ConnectWithSocket(xSNT, ngVecLC.inputs["Factor B"], xFacB)
 
     return ngVecLC.outputs[0]
+
+
+# enddef
+
+
+###################################################################
+# Add shader node: Normal Map
+def NormalMap(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xStrength: TData = 1.0) -> bpy.types.NodeOutputs:
+    nodX: bpy.types.ShaderNodeNormalMap = xSNT.nodes.new("ShaderNodeNormalMap")
+    nodX.label = sTitle
+
+    nutils._ConnectWithSocket(xSNT, nodX.inputs["Strength"], xStrength)
+    nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
+
+    return nodX.outputs
 
 
 # enddef

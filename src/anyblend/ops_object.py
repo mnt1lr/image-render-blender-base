@@ -30,7 +30,7 @@
 import bpy
 
 # import mathutils
-
+import math
 from pathlib import Path
 
 # from . import collection
@@ -53,7 +53,6 @@ def _TempContextForObject(_objX: bpy.types.Object) -> bpy.types.Context:
 
 ######################################################
 def SetOriginByType(_objX: bpy.types.Object, *, _sOriginType: str, _sCenter: str):
-
     with _TempContextForObject(_objX):
         setRes = bpy.ops.object.origin_set(type=_sOriginType, center=_sCenter)
         if setRes.pop() != "FINISHED":
@@ -70,10 +69,18 @@ def SetOriginByType(_objX: bpy.types.Object, *, _sOriginType: str, _sCenter: str
 
 
 ######################################################
-def ApplyTransforms(_objX: bpy.types.Object):
-
+def ApplyTransforms(
+    _objX: bpy.types.Object,
+    *,
+    _bLocation: bool = True,
+    _bRotation: bool = True,
+    _bScale: bool = True,
+    _bProperties: bool = True,
+):
     with _TempContextForObject(_objX):
-        setRes = bpy.ops.object.transform_apply()
+        setRes = bpy.ops.object.transform_apply(
+            location=_bLocation, rotation=_bRotation, scale=_bScale, properties=_bProperties
+        )
         if setRes.pop() != "FINISHED":
             raise RuntimeError(f"Error applying transformations to object '{_objX.name}'")
         # endif
@@ -85,7 +92,6 @@ def ApplyTransforms(_objX: bpy.types.Object):
 
 ######################################################
 def Duplicate(_objX: bpy.types.Object) -> bpy.types.Object:
-
     setObj: set[str] = set([x.name for x in bpy.data.objects])
 
     objDup: bpy.types.Object = None
@@ -109,7 +115,6 @@ def Duplicate(_objX: bpy.types.Object) -> bpy.types.Object:
 
 ######################################################
 def AddModifier(_objX: bpy.types.Object, _sModifier: str) -> bpy.types.Modifier:
-
     setMod: set[str] = set([x.name for x in _objX.modifiers])
 
     with _TempContextForObject(_objX):
@@ -147,8 +152,23 @@ def AddModifier_Shrinkwrap(_objX: bpy.types.Object) -> bpy.types.ShrinkwrapModif
 
 
 ######################################################
-def ApplyModifier(_objX: bpy.types.Object, _modX: bpy.types.Modifier):
+def AddModifier_Smooth(_objX: bpy.types.Object) -> bpy.types.SmoothModifier:
+    return AddModifier(_objX, "SMOOTH")
 
+
+# enddef
+
+
+######################################################
+def AddModifier_MultiRes(_objX: bpy.types.Object) -> bpy.types.MultiresModifier:
+    return AddModifier(_objX, "MULTIRES")
+
+
+# enddef
+
+
+######################################################
+def ApplyModifier(_objX: bpy.types.Object, _modX: bpy.types.Modifier):
     if _modX.name not in _objX.modifiers:
         raise RuntimeError(f"Modifier '{_modX.name}' not part of object '{_objX.name}'")
     # endif
@@ -165,6 +185,20 @@ def ApplyModifier(_objX: bpy.types.Object, _modX: bpy.types.Modifier):
 
 
 ######################################################
+def DoMultiResSubdivide(
+    _objX: bpy.types.Object, _modX: bpy.types.MultiresModifier, _iCount: int, *, _sMode: str = "CATMULL_CLARK"
+):
+    with _TempContextForObject(_objX):
+        for iIdx in range(_iCount):
+            bpy.ops.object.multires_subdivide(modifier=_modX.name, mode=_sMode)
+        # endfor
+    # endwith
+
+
+# enddef
+
+
+######################################################
 def SetNewMaterial(
     _objX: bpy.types.Object,
     *,
@@ -173,7 +207,6 @@ def SetNewMaterial(
     _lBaseColor: list[float] = None,
     _lEmission: list[float] = None,
 ) -> bpy.types.Material:
-
     if not isinstance(_objX, bpy.types.Object):
         raise RuntimeError("Given element is no Blender object")
     # endif
@@ -250,7 +283,6 @@ def SetNewMaterial(
 
 ######################################################
 def ImportToScene_Obj(_pathFile: Path) -> bpy.types.Object:
-
     xCtx = bpy.context.copy()
 
     objIn: bpy.types.Object
@@ -276,6 +308,59 @@ def ImportToScene_Obj(_pathFile: Path) -> bpy.types.Object:
     viewlayer.Update()
 
     return objIn
+
+
+# enddef
+
+
+######################################################
+def ExportFromScene_Obj(_pathFile: Path, _objX: bpy.types.Object):
+    with _TempContextForObject(_objX):
+        bpy.ops.export_scene.obj(
+            filepath=_pathFile.as_posix(),
+            check_existing=False,
+            use_selection=True,
+            use_animation=False,
+            use_mesh_modifiers=True,
+            use_edges=True,
+            use_smooth_groups=False,
+            use_smooth_groups_bitflags=False,
+            use_normals=True,
+            use_uvs=True,
+            use_materials=True,
+            use_triangles=False,
+            use_nurbs=False,
+            use_vertex_groups=False,
+            use_blen_objects=True,
+            group_by_material=False,
+            group_by_object=False,
+            keep_vertex_order=False,
+            global_scale=1,
+            path_mode="AUTO",
+            axis_forward="-Z",
+            axis_up="Y",
+        )
+    # endwith
+
+
+# enddef
+
+
+######################################################
+def SmartUvUnwrap(_objX: bpy.types.Object, *, _fAngleLimit_deg: float = 66.0, _fIslandMargin: float = 0.0):
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = _objX
+    _objX.select_set(True)
+
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_mode(type="VERT")
+    bpy.ops.mesh.select_all(action="SELECT")
+
+    fAngleLimit_rad = math.radians(_fAngleLimit_deg)
+
+    # Smart UV unwrap
+    bpy.ops.uv.smart_project(angle_limit=fAngleLimit_rad, island_margin=_fIslandMargin)
+    bpy.ops.object.mode_set(mode="OBJECT")
 
 
 # enddef

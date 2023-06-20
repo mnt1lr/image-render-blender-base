@@ -93,7 +93,6 @@ class EAlphaMode(str, Enum):
 def Noise(
     xSNT: bpy.types.NodeTree, sTitle: str, xVector: TData, xScale: TData, xDetail: TData, xDistortion: TData
 ) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeTexNoise")
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Vector"], xVector)
@@ -169,7 +168,10 @@ def Image(
     nodX.image.colorspace_settings.name = eColorSpace
     nodX.image.alpha_mode = eAlphaMode
 
-    nutils._ConnectWithSocket(xSNT, nodX.inputs["Vector"], xVector)
+    if xVector is not None:
+        nutils._ConnectWithSocket(xSNT, nodX.inputs["Vector"], xVector)
+    # endif
+
     nodX.label = sTitle
 
     return nodX.outputs
