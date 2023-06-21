@@ -30,6 +30,8 @@ import bpy
 import bmesh
 
 import mathutils
+import math
+
 from typing import Union, Optional, Tuple
 from pathlib import Path
 from .mesh.types import CMeshData
@@ -701,7 +703,7 @@ def ImportObjectObj(
     _sSetOriginType: str = None,
     _sSetOriginCenter: str = None,
     _lLocation: list[float] = None,
-    _lRotationEuler: list[float] = None,
+    _lRotationEuler_deg: list[float] = None,
 ):
     objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
 
@@ -720,11 +722,12 @@ def ImportObjectObj(
         objIn.location = mathutils.Vector(_lLocation)
     # endif
 
-    if isinstance(_lRotationEuler, list):
-        if len(_lRotationEuler) != 3:
-            raise RuntimeError(f"Invalid rotation for object: {_lRotationEuler}")
+    if isinstance(_lRotationEuler_deg, list):
+        if len(_lRotationEuler_deg) != 3:
+            raise RuntimeError(f"Invalid rotation for object: {_lRotationEuler_deg}")
         # endif
-        objIn.rotation_euler = mathutils.Vector(_lRotationEuler)
+        lRot_rad = [math.radians(x) for x in _lRotationEuler_deg]
+        objIn.rotation_euler = mathutils.Vector(lRot_rad)
     # endif
 
     if isinstance(_fScaleFactor, float) or _bDoSetOrigin is True:
