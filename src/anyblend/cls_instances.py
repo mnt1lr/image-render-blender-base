@@ -36,6 +36,7 @@ from anyblend import collection, object
 from .cls_boundbox import CBoundingBox
 from . import viewlayer
 
+
 # ################################################################################################
 class _CInstance:
     def __init__(self, *, _sName):
@@ -137,7 +138,6 @@ class CObjectInstance(_CInstance):
 
     # #################################################################################################
     def Copy(self, *, _bLinked: bool = False, _clnTarget=None):
-
         objTrg = object.CopyObject(self.xObject, _bLinked=_bLinked, _bHierarchy=True, _clnTarget=_clnTarget)
 
         return CObjectInstance(_objX=objTrg)
@@ -146,7 +146,6 @@ class CObjectInstance(_CInstance):
 
     # #################################################################################################
     def EvalBoundingBox(self):
-
         self._xBoundBox = CBoundingBox(_objX=self.xObject, _bLocal=False)
 
     # enddef
@@ -179,7 +178,6 @@ class CObjectInstance(_CInstance):
         _bAnglesInDeg: bool = True,
         _lOriginOffset: list[float] = [0.0, 0.0, 0.0],
     ) -> mathutils.Matrix:
-
         matTrans = self.xBoundBox.GetRotateEulerMatrix(
             _lEulerAngles=_lEulerAngles, _bAnglesInDeg=_bAnglesInDeg, _lOriginOffset=_lOriginOffset
         )
@@ -207,7 +205,6 @@ class CObjectInstance(_CInstance):
 
     # #################################################################################################
     def ParentTo(self, _sParentObject: str, _bKeepTransform: bool = True, _bKeepRelTransform: bool = False):
-
         objParent: bpy.types.Object = bpy.data.objects.get(_sParentObject)
         if objParent is None:
             raise RuntimeError(f"Parent object '{_sParentObject}' not found")
@@ -272,7 +269,6 @@ class CCollectionInstance(_CInstance):
 
     @property
     def vOrigin(self) -> mathutils.Vector:
-
         objOrig = None
         # Try to find first empty in list of objects
         for sObjName in self._lObjects:
@@ -294,7 +290,6 @@ class CCollectionInstance(_CInstance):
 
     # #################################################################################################
     def Copy(self, *, _bLinked: bool = False, _clnTarget=None):
-
         clnTrg = object.CopyCollection(
             self.xCollection, _bLinked=_bLinked, _bObjectHierarchy=True, _clnTarget=_clnTarget, _xContext=bpy.context
         )
@@ -305,7 +300,6 @@ class CCollectionInstance(_CInstance):
 
     # #################################################################################################
     def EvalBoundingBox(self):
-
         lObjectNames = collection.GetCollectionObjects(
             self.xCollection, _bChildren=True, _bRecursive=True, _lObjectTypes=self._lObjectTypes
         )
@@ -361,7 +355,6 @@ class CCollectionInstance(_CInstance):
         _bAnglesInDeg: bool = True,
         _lOriginOffset: list[float] = [0.0, 0.0, 0.0],
     ) -> mathutils.Matrix:
-
         matTrans = self.xBoundBox.GetRotateEulerMatrix(
             _lEulerAngles=_lEulerAngles, _bAnglesInDeg=_bAnglesInDeg, _lOriginOffset=_lOriginOffset
         )
@@ -394,7 +387,6 @@ class CCollectionInstance(_CInstance):
 
     # #################################################################################################
     def ParentTo(self, _sParentObject: str, _bKeepTransform: bool = True, _bKeepRelTransform: bool = False):
-
         objParent: bpy.types.Object = bpy.data.objects.get(_sParentObject)
         if objParent is None:
             raise RuntimeError(f"Parent object '{_sParentObject}' not found")
@@ -464,7 +456,6 @@ class CInstances:
     def AddCollectionElements(
         self, *, _clnX, _bChildCollectionsAsInstances: bool = False, _lObjectTypes: list[str] = None
     ):
-
         if _bChildCollectionsAsInstances is False:
             lObjects = collection.GetCollectionObjects(
                 _clnX, _bChildren=False, _bRecursive=True, _lObjectTypes=_lObjectTypes
@@ -527,7 +518,6 @@ class CInstances:
         _funcGetTargetCollection: Optional[Callable[[_CInstance, bpy.types.Collection], bpy.types.Collection]] = None,
         _funcProcInstance: Optional[Callable[[_CInstance, bpy.types.Collection], None]] = None,
     ) -> "CInstances":
-
         if _iInstanceCount <= 0:
             raise RuntimeError(f"Invalid instance count '{_iInstanceCount}'")
         # endif
@@ -546,16 +536,17 @@ class CInstances:
         # The new instance collection
         xInstCln = CInstances(_sName=_sName)
         lElKeys = list(self._dicElement.keys())
+        iElCnt = len(lElKeys)
 
         # For small lists of elements, the random.choice() function
         # selection can be very biased. The following process avoids
         # that two consecutive random values are the same.
         # This gives a more even mix of all source objects.
-        lSelIdx = [random.randrange(0, len(lElKeys))]
+        lSelIdx = [random.randrange(0, iElCnt)]
         for iIdx in range(_iInstanceCount - 1):
             while True:
-                iElIdx = random.randrange(0, len(lElKeys))
-                if iElIdx != lSelIdx[iIdx]:
+                iElIdx = random.randrange(0, iElCnt)
+                if iElIdx != lSelIdx[iIdx] or iElCnt == 1:
                     break
                 # endif
             # endwhile
