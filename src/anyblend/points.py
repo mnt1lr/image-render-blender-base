@@ -454,6 +454,7 @@ def GetRndPointsOnSurfaceUniformly(
     bUseBoundBox: bool = False,
     xInstanceOrigin: Union[list[float], str, None] = None,
     xObstacles: Optional[CInstances] = None,
+    bFilterPolygons: bool = False,
 ) -> dict:
     """Create the given number of points at random positions on the surface.
        Takes into account the vertex weights of the given vertex group, if set.
@@ -483,6 +484,12 @@ def GetRndPointsOnSurfaceUniformly(
             The minimal horizonal view angle separation in degrees of the generated points.
             The argumeent 'matCamWorld' must be specified.
 
+        bFilterPolygons (bool, optional, default=false):
+            If true, weights all polygon vertices by the camera FoV and camera distance constraints.
+            In this way, polygons that are outside the camera FoV or distance constraints will not
+            be used for finding randomized points. This speeds up the search for points dramatically.
+            Only works if the target surface has more than 4 polygons.
+            
         bUseCameraFov (bool, optional, default=false):
             Contraints points to the horizontal camera field of view if set to true.
             The arguments 'matCamWorld' and 'lCamFov_deg' must be specified.
@@ -631,11 +638,44 @@ def GetRndPointsOnSurfaceUniformly(
     iPlyCnt = xPolys.iTotalPolyCount
     # print(iPlyCnt)
 
+    # if a camera fov or distance from camera is given,
+    # then set the polygon weights according to constraint
+    # before generating random points.
+    # This speeds up point generation as only polygons are used,
+    # that are inside the allowed range.
+    # This optimization can only be done if there are more than
+    # 4 polygons. Otherwise, nothing will be left. You may need
+    # to subdivide the placement surface for better results.
+    if bFilterPolygons is True and bUseCameraFov is True and iPlyCnt > 4:
+        for iVexIdx, xObjData in xPolys.lObjectVertexIndices:
+            vPos_w = mathutils.Vector(xObjData.aVex[iVexIdx])
+
+            vPos_cam = (matCamWorld_inv @ vPos_w.to_4d()).to_3d()
+            # vViewDir_cam = vPos_cam.normalized()
+            vHorizPos_cam = matProjXZ @ vPos_cam
+            vVertPos_cam = matProjYZ @ vPos_cam
+            vHorizViewDir_cam = vHorizPos_cam.normalized()
+            vVertViewDir_cam = vVertPos_cam.normalized()
+
+            fCamDist = (vPos_w - vCamOrig).length
+            lViewAngle_rad = [
+                abs(math.atan2(vHorizViewDir_cam.x, -vHorizViewDir_cam.z)),
+                abs(math.atan2(vVertViewDir_cam.y, -vVertViewDir_cam.z)),
+            ]
+
+            fW: float = max(0.0, 1.0 - max(0.0, lViewAngle_rad[0] - lCamMaxViewAngle_rad[0]) / lCamMaxViewAngle_rad[0])
+            fW *= max(0.0, 1.0 - max(0.0, lViewAngle_rad[1] - lCamMaxViewAngle_rad[1]) / lCamMaxViewAngle_rad[1])
+            fW *= max(0.0, 1.0 - max(0.0, lCamDistRange[0] - fCamDist) / lCamDistRange[0])
+            fW *= max(0.0, 1.0 - max(0.0, fCamDist - lCamDistRange[1]) / lCamDistRange[1])
+            xObjData.lWeights[iVexIdx] = fW
+        # endfor
+    # endif
+
     dicPnts: dict[int, mathutils.Vector] = {}
     dicBoxes: dict[int, CBoundingBox] = {}
     lHorizViewDir = []
     vHorizViewDir_cam = None
-    lPlyIdx: list[int] = list(range(0, iPlyCnt))
+    # lPlyIdx: list[int] = list(range(0, iPlyCnt))
 
     for iPntIdx in range(0, iPntCnt):
         # print(f"Test point {iPntIdx}")
@@ -651,7 +691,7 @@ def GetRndPointsOnSurfaceUniformly(
 
             if bHasAngleConstraint is True or bUseCameraFov is True:
                 vPos_cam = (matCamWorld_inv @ vPos_w.to_4d()).to_3d()
-                vViewDir_cam = vPos_cam.normalized()
+                # vViewDir_cam = vPos_cam.normalized()
                 vHorizPos_cam = matProjXZ @ vPos_cam
                 vVertPos_cam = matProjYZ @ vPos_cam
                 vHorizViewDir_cam = vHorizPos_cam.normalized()
@@ -673,6 +713,12 @@ def GetRndPointsOnSurfaceUniformly(
                     and fCamDist <= lCamDistRange[1]
                 )
             # endif
+
+            print(
+                f"{iAttempt}/{iMaxTrials}: bUseCameraFov ({bUseCameraFov}), bFovOK ({bFovOK}), fCamDist ({fCamDist}), lCamDistRange: ({lCamDistRange})"
+            )
+            print(f"> lViewAngle_rad: ({lViewAngle_rad}), lCamMaxViewAngle_rad: ({lCamMaxViewAngle_rad})")
+            print(" ")
 
             # if no constraint is given, or this is the first point,
             # then accept the position

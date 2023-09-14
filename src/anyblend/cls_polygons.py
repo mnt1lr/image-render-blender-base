@@ -31,6 +31,8 @@ import random
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional, Tuple
+from collections.abc import Iterable
+
 from anybase import assertion
 
 from anyblend import object
@@ -38,7 +40,6 @@ from anyblend import object
 
 @dataclass
 class CObjectData:
-
     sName: str = None
     lWeights: list[float] = None
     lPoly: list[list[int]] = None
@@ -51,7 +52,6 @@ class CObjectData:
 
 class CPolygons:
     def __init__(self):
-
         self._lObjects: list[CObjectData] = []
         self._dicObjects: dict[str, int] = {}
         self._iTotalPolyCount: int = 0
@@ -74,6 +74,17 @@ class CPolygons:
 
     # enddef
 
+    @property
+    def lObjectVertexIndices(self) -> Iterable[tuple[int, CObjectData]]:
+        for xObjData in self._lObjects:
+            iVexCnt = len(xObjData.lWeights)
+            for iVexIdx in range(iVexCnt):
+                yield iVexIdx, xObjData
+            # endfor
+        # endfor
+
+    # enddef
+
     # ####################################################################################
     def _Update(self):
         self._iTotalPolyCount = 0
@@ -88,7 +99,6 @@ class CPolygons:
 
     # ####################################################################################
     def _GetObjectPolyIdx(self, _iAbsPolyIdx) -> Tuple[int, CObjectData]:
-
         if _iAbsPolyIdx < 0:
             raise RuntimeError(f"Polynomial index '{_iAbsPolyIdx}' out of range")
         # endif
@@ -110,7 +120,6 @@ class CPolygons:
 
     # ####################################################################################
     def GetPolyVertices(self, _iAbsPolyIdx: int) -> np.ndarray:
-
         iPolyIdx, xData = self._GetObjectPolyIdx(_iAbsPolyIdx)
         lVexIdx = xData.lPoly[iPolyIdx]
         return xData.aVex[lVexIdx]
@@ -119,7 +128,6 @@ class CPolygons:
 
     # ####################################################################################
     def GetPolyWeight(self, _iAbsPolyIdx: int) -> np.ndarray:
-
         iPolyIdx, xData = self._GetObjectPolyIdx(_iAbsPolyIdx)
         lVexIdx = xData.lPoly[iPolyIdx]
         fWeight = sum([xData.lWeights[i] for i in lVexIdx]) / len(lVexIdx)
@@ -129,7 +137,6 @@ class CPolygons:
 
     # ####################################################################################
     def GetRandomPosOnPoly(self, _iAbsPolyIdx: int) -> np.ndarray:
-
         iPolyIdx, xData = self._GetObjectPolyIdx(_iAbsPolyIdx)
         lVexIdx = xData.lPoly[iPolyIdx]
         aVex = xData.aVex[lVexIdx]
@@ -143,17 +150,15 @@ class CPolygons:
 
     # enddef
 
-    
     # ####################################################################################
     def GetRandomPosOnPolyUniformlySimplex(self, _iAbsPolyIdx: int) -> np.ndarray:
-
         # https://cs.stackexchange.com/questions/3227/uniform-sampling-from-a-simplex
 
         iPolyIdx, xData = self._GetObjectPolyIdx(_iAbsPolyIdx)
         lVexIdx = xData.lPoly[iPolyIdx]
         aVex = xData.aVex[lVexIdx]
-        aCalculateProbs = np.zeros(len(lVexIdx)+1)
-        aCalculateProbs[1:-1] = np.sort(np.random.uniform(size=(len(lVexIdx)-1)))
+        aCalculateProbs = np.zeros(len(lVexIdx) + 1)
+        aCalculateProbs[1:-1] = np.sort(np.random.uniform(size=(len(lVexIdx) - 1)))
         aCalculateProbs[-1] = 1
         aProbs = aCalculateProbs[1:] - aCalculateProbs[:-1]
         aWeights = np.array([xData.lWeights[i] for i in lVexIdx])
@@ -166,7 +171,6 @@ class CPolygons:
 
     # ####################################################################################
     def _CalcWeightAndAreaDistribution(self):
-        
         lAreas = []
         lWeights = []
         for xData in self._lObjects:
@@ -175,23 +179,27 @@ class CPolygons:
 
                 lVexPairs = []
                 for i, iVexId1 in enumerate(lVexIdx):
-                    for iVexId2 in lVexIdx[i+1:]:
+                    for iVexId2 in lVexIdx[i + 1 :]:
                         lVexPairs.append((iVexId1, iVexId2))
                     # endfor
                 # endfor
 
-                for (iVexId1, iVexId2) in lVexPairs:
+                for iVexId1, iVexId2 in lVexPairs:
                     aVecSub = xData.aVex[iVexId1] - xData.aVex[iVexId2]
                     lPairwiseDistances.append(np.linalg.norm(aVecSub))
                 # endfor
 
-                iAreaApprox = np.min(lPairwiseDistances) * np.median(lPairwiseDistances) * (0.5 if len(lPairwiseDistances) == 3 else 1)
+                iAreaApprox = (
+                    np.min(lPairwiseDistances)
+                    * np.median(lPairwiseDistances)
+                    * (0.5 if len(lPairwiseDistances) == 3 else 1)
+                )
 
                 lAreas.append(iAreaApprox)
                 lWeights.append(sum([xData.lWeights[i] for i in lVexIdx]) / len(lVexIdx))
             # endfor
         # endfor
-        
+
         aAreas = np.array(lAreas)
         aWeights = np.array(lWeights)
 
@@ -205,10 +213,10 @@ class CPolygons:
         if self._aDistribution is None:
             self._CalcWeightAndAreaDistribution()
         # endif
-        
+
         iPolyId = np.argmax(np.random.uniform() < self._aDistribution)
         return self.GetRandomPosOnPolyUniformlySimplex(iPolyId)
-        #return self.GetRandomPosOnPoly(iPolyId)
+        # return self.GetRandomPosOnPoly(iPolyId)
 
     # enddef
 
