@@ -73,12 +73,59 @@ class CNodeSocketInfo(NamedTuple):
 # endclass
 
 
+@dataclass
+class CNodeDescriptor:
+    sTypeId: str
+    sTypeName: str
+    xNodeInput: Union[int, str]
+    xNodeOutput: Union[int, str]
+
+
+# endclass
+
+
+###################################################################
+def ReplaceNodeType(
+    _xSNT: bpy.types.NodeTree,
+    *,
+    _xSearch: CNodeDescriptor,
+    _xReplace: CNodeDescriptor,
+    _bRecurse: bool = True,
+):
+    lReplaceNodes: list = []
+
+    for ndX in _xSNT.nodes:
+        if ndX.type == "GROUP" and _bRecurse is True:
+            ReplaceNodeType(
+                ndX.node_tree,
+                _xSearch=_xSearch,
+                _xReplace=_xReplace,
+                _bRecurse=True,
+            )
+
+        elif ndX.type == _xSearch.sTypeId:
+            lReplaceNodes.append(ndX)
+        # endif
+    # endfor
+
+    for ndX in lReplaceNodes:
+        ndReplace = _xSNT.nodes.new(_xReplace.sTypeName)
+        for lnkX in ndX.inputs[_xSearch.xNodeInput].links:
+            _xSNT.links.new(lnkX.from_socket, ndReplace.inputs[_xReplace.xNodeInput])
+        # endfor
+        for lnkX in ndX.outputs[_xSearch.xNodeOutput].links:
+            _xSNT.links.new(ndReplace.outputs[_xReplace.xNodeOutput], lnkX.to_socket)
+        # endfor
+        _xSNT.nodes.remove(ndX)
+    # endfor
+
+
+# enddef
+
+
 ###################################################################
 # Connect sockets or values with sockets
-
-
 def _ConnectWithSocket(xSNT: bpy.types.NodeTree, xTrg: bpy.types.NodeSocket, xSrc: TData):
-
     if xSrc is not None:
         if isinstance(xSrc, numbers.Real):
             xTrg.default_value = xSrc
@@ -126,7 +173,6 @@ def _ProvideNodeTreeOutputSocket(ntGrp: bpy.types.NodeTree, sName: str, sTypeNam
 def ProvideNodeTreeInputs(
     ntGrp: bpy.types.NodeTree, xData: Union[list, CNodeSocketCollection]
 ) -> bpy.types.NodeGroupInput:
-
     if isinstance(xData, list):
         for lItem in xData:
             _ProvideNodeTreeInputSocket(ntGrp, lItem[0], lItem[1], lItem[2])
@@ -154,12 +200,12 @@ def ProvideNodeTreeInputs(
 
 # enddef
 
+
 ###################################################################
 # Provide a shader node tree output
 def ProvideNodeTreeOutputs(
     ntGrp: bpy.types.NodeTree, xData: Union[list, CNodeSocketCollection]
 ) -> bpy.types.NodeGroupOutput:
-
     if isinstance(xData, list):
         for lItem in xData:
             _ProvideNodeTreeOutputSocket(ntGrp, lItem[0], lItem[1])
@@ -188,6 +234,7 @@ def ProvideNodeTreeOutputs(
 
 # enddef
 
+
 ###################################################################
 # Add a Shader node Group
 #
@@ -195,7 +242,6 @@ def ProvideNodeTreeOutputs(
 # xNodeTree: Node Tree instance
 #
 def Group(xSNT: bpy.types.NodeTree, xNodeTree: bpy.types.NodeTree) -> bpy.types.ShaderNodeGroup:
-
     nodX = xSNT.nodes.new("ShaderNodeGroup")
     nodX.node_tree = xNodeTree
     nodX.width *= 2
@@ -209,7 +255,6 @@ def Group(xSNT: bpy.types.NodeTree, xNodeTree: bpy.types.NodeTree) -> bpy.types.
 ###################################################################
 # Add shader node: Attribute
 def Attribute(xSNT: bpy.types.NodeTree, _eType: EAttributeType, _sName: str) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeAttribute")
     nodX.attribute_type = _eType
     nodX.attribute_name = _sName
@@ -223,7 +268,6 @@ def Attribute(xSNT: bpy.types.NodeTree, _eType: EAttributeType, _sName: str) -> 
 ###################################################################
 # Add shader node: Vertex Color
 def VertexColor(xSNT: bpy.types.NodeTree, _sLayerName: str) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeVertexColor")
     nodX.layer_name = _sLayerName
     nodX.width *= 2
@@ -237,7 +281,6 @@ def VertexColor(xSNT: bpy.types.NodeTree, _sLayerName: str) -> bpy.types.NodeOut
 ###################################################################
 # Add shader node: Geometry
 def Geometry(xSNT) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeNewGeometry")
 
     return nodX.outputs
@@ -250,7 +293,6 @@ def Geometry(xSNT) -> bpy.types.NodeOutputs:
 
 
 def ObjectInfo(xSNT) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeObjectInfo")
 
     return nodX.outputs
@@ -263,7 +305,6 @@ def ObjectInfo(xSNT) -> bpy.types.NodeOutputs:
 
 
 def LightPath(xSNT) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeLightPath")
 
     return nodX.outputs
@@ -276,7 +317,6 @@ def LightPath(xSNT) -> bpy.types.NodeOutputs:
 
 
 def Material(xSNT) -> bpy.types.NodeInputs:
-
     nodX = xSNT.nodes.new("ShaderNodeOutputMaterial")
 
     return nodX.inputs
@@ -289,7 +329,6 @@ def Material(xSNT) -> bpy.types.NodeInputs:
 
 
 def Value(xSNT: bpy.types.NodeTree, sTitle, fValue) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeValue")
 
     nodX.outputs[0].default_value = fValue
@@ -307,7 +346,6 @@ def Value(xSNT: bpy.types.NodeTree, sTitle, fValue) -> bpy.types.NodeSocket:
 
 
 def CameraData(xSNT: bpy.types.NodeTree, sTitle) -> bpy.types.NodeOutputs:
-
     nodX = xSNT.nodes.new("ShaderNodeCameraData")
 
     nodX.label = sTitle
