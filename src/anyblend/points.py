@@ -489,7 +489,7 @@ def GetRndPointsOnSurfaceUniformly(
             In this way, polygons that are outside the camera FoV or distance constraints will not
             be used for finding randomized points. This speeds up the search for points dramatically.
             Only works if the target surface has more than 4 polygons.
-            
+
         bUseCameraFov (bool, optional, default=false):
             Contraints points to the horizontal camera field of view if set to true.
             The arguments 'matCamWorld' and 'lCamFov_deg' must be specified.
@@ -714,11 +714,11 @@ def GetRndPointsOnSurfaceUniformly(
                 )
             # endif
 
-            print(
-                f"{iAttempt}/{iMaxTrials}: bUseCameraFov ({bUseCameraFov}), bFovOK ({bFovOK}), fCamDist ({fCamDist}), lCamDistRange: ({lCamDistRange})"
-            )
-            print(f"> lViewAngle_rad: ({lViewAngle_rad}), lCamMaxViewAngle_rad: ({lCamMaxViewAngle_rad})")
-            print(" ")
+            # print(
+            #     f"{iAttempt}/{iMaxTrials}: bUseCameraFov ({bUseCameraFov}), bFovOK ({bFovOK}), fCamDist ({fCamDist}), lCamDistRange: ({lCamDistRange})"
+            # )
+            # print(f"> lViewAngle_rad: ({lViewAngle_rad}), lCamMaxViewAngle_rad: ({lCamMaxViewAngle_rad})")
+            # print(" ")
 
             # if no constraint is given, or this is the first point,
             # then accept the position
