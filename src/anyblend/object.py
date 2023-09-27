@@ -694,7 +694,60 @@ def GetObjectDeltaToMesh(*, objTrg, objX, vDir, sMode="ABOVE"):
 
 
 ################################################################################
-def ImportObjectObj(
+def _GetChildMeshObjectNames(_objParent: bpy.types.Object, *, _bRecursive: bool = True) -> list[str]:
+    lChildren: list[str] = []
+    for objChild in _objParent.children:
+        if objChild.type == "MESH":
+            lChildren.append(objChild.name)
+        elif objChild.type == "EMPTY" and _bRecursive is True:
+            lChildren.extend(_GetChildMeshObjectNames(objChild))
+        # endif
+    # endfor
+
+    return lChildren
+
+
+# enddef
+
+
+################################################################################
+def JoinHierarchyToObject(_objIn: bpy.types.Object) -> str:
+    if _objIn.type == "EMPTY":
+        lObjects = _GetChildMeshObjectNames(_objIn, _bRecursive=True)
+        if len(lObjects) == 0:
+            return None
+        # endif
+
+        bpy.ops.object.select_all(action="DESELECT")
+
+        for sObjName in lObjects:
+            bpy.data.objects[sObjName].select_set(True)
+        # endfor
+        sNewObj: str = lObjects[0]
+        sObjInName: str = _objIn.name
+
+        bpy.context.view_layer.objects.active = bpy.data.objects[sNewObj]
+        bpy.ops.object.join()
+        bpy.ops.object.select_all(action="DESELECT")
+        objNew: bpy.types.Object = bpy.data.objects[sNewObj]
+        objNew.parent = _objIn.parent
+        RemoveObjectHierarchy(_objIn)
+        objNew.name = sObjInName
+
+        return objNew.name
+
+    elif _objIn.type == "MESH":
+        return _objIn.name
+    # endif
+
+    return None
+
+
+# enddef
+
+
+################################################################################
+def ImportObjectAny(
     *,
     _pathFile: Path,
     _sNewName: str = None,
@@ -705,7 +758,15 @@ def ImportObjectObj(
     _lLocation: list[float] = None,
     _lRotationEuler_deg: list[float] = None,
 ):
-    objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
+    if _pathFile.suffix == ".obj":
+        objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
+    elif _pathFile.suffix == ".fbx":
+        objIn: bpy.types.Object = ops.ImportToScene_Fbx(_pathFile)
+    else:
+        lSupportedTypes: list[str] = [".obj", ".fbx"]
+        sSupTypes: str = ", ".join(lSupportedTypes)
+        raise RuntimeError(f"File type '{_pathFile.suffix}' not supported. Supported types are: [{sSupTypes}]")
+    # endif
 
     if isinstance(_fScaleFactor, float):
         objIn.scale *= mathutils.Vector((_fScaleFactor, _fScaleFactor, _fScaleFactor))
