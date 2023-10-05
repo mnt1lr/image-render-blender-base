@@ -747,6 +747,46 @@ def JoinHierarchyToObject(_objIn: bpy.types.Object) -> str:
 
 
 ################################################################################
+def JoinObjectList(_lObjNames: list[str], _sNewName: str) -> str:
+    lObjects: list[str] = []
+
+    for sObjName in _lObjNames:
+        objX: bpy.types.Object = bpy.data.objects.get(sObjName)
+        if objX is None:
+            continue
+        # endif
+
+        if objX.type == "EMPTY":
+            lChildObj = _GetChildMeshObjectNames(objX, _bRecursive=True)
+            lObjects.extend(lChildObj)
+        elif objX.type == "MESH":
+            lObjects.append(sObjName)
+        # endif
+    # endfor
+
+    bpy.ops.object.select_all(action="DESELECT")
+
+    for sObjName in lObjects:
+        bpy.data.objects[sObjName].select_set(True)
+    # endfor
+    sNewObj: str = lObjects[0]
+    objMain = bpy.data.objects[sNewObj]
+    objParent: bpy.types.Object = objMain.parent
+
+    bpy.context.view_layer.objects.active = objMain
+    bpy.ops.object.join()
+    bpy.ops.object.select_all(action="DESELECT")
+    objNew: bpy.types.Object = bpy.data.objects[sNewObj]
+    objNew.parent = objParent
+    objNew.name = _sNewName
+
+    return objNew.name
+
+
+# enddef
+
+
+################################################################################
 def ImportObjectAny(
     *,
     _pathFile: Path,
@@ -757,30 +797,91 @@ def ImportObjectAny(
     _sSetOriginCenter: str = None,
     _lLocation: list[float] = None,
     _lRotationEuler_deg: list[float] = None,
-):
+    _bDoJoinObjects: bool = False,
+) -> list[str]:
+    lObjIn: list[str]
     if _pathFile.suffix == ".obj":
-        objIn: bpy.types.Object = ops.ImportToScene_Obj(_pathFile)
+        lObjIn = ops.ImportToScene_Obj(_pathFile)
     elif _pathFile.suffix == ".fbx":
-        objIn: bpy.types.Object = ops.ImportToScene_Fbx(_pathFile)
+        lObjIn = ops.ImportToScene_Fbx(_pathFile)
+    elif _pathFile.suffix in [".glb", ".gltf"]:
+        lObjIn = ops.ImportToScene_Glb(_pathFile)
     else:
-        lSupportedTypes: list[str] = [".obj", ".fbx"]
+        lSupportedTypes: list[str] = [".obj", ".fbx", ".glb", ".gltf"]
         sSupTypes: str = ", ".join(lSupportedTypes)
         raise RuntimeError(f"File type '{_pathFile.suffix}' not supported. Supported types are: [{sSupTypes}]")
     # endif
 
+    # Only keep those objects in the list of imported objects, that are not parented
+    # to any of the other imported objects
+    lObjIn = [
+        sName
+        for sName in lObjIn
+        if bpy.data.objects[sName].parent is None or bpy.data.objects[sName].parent.name not in lObjIn
+    ]
+
+    lCreationNames: list[str] = []
+    for sObjIn in lObjIn:
+        objIn = bpy.data.objects[sObjIn]
+        if objIn.type == "EMPTY":
+            if _bDoJoinObjects is True:
+                sNewObj = JoinHierarchyToObject(objIn)
+            else:
+                lChildren: list[str] = GetObjectChildrenNames(objIn, bRecursive=True)
+                for sChild in lChildren:
+                    objChild: bpy.types.Object = bpy.data.objects[sChild]
+                    if objChild.type == "MESH":
+                        lCreationNames.append(sChild)
+                        objChild.parent = objIn.parent
+                    # endif
+                # endfor
+                RemoveObjectHierarchy(objIn)
+                sNewObj = None
+            # endif
+        elif objIn.type == "MESH":
+            sNewObj = objIn.name
+        else:
+            sNewObj = None
+        # endif
+        if sNewObj is not None:
+            lCreationNames.append(sNewObj)
+        # endif
+    # endif
+
+    if len(lCreationNames) > 1 and _bDoJoinObjects is True:
+        if _sNewName is not None:
+            sNewName = _sNewName
+        else:
+            sNewName = lCreationNames[0]
+        # endif
+        sNewObj = JoinObjectList(lCreationNames, sNewName)
+        lObjIn = [sNewObj]
+    else:
+        lObjIn = lCreationNames
+    # endif
+
     if isinstance(_fScaleFactor, float):
-        objIn.scale *= mathutils.Vector((_fScaleFactor, _fScaleFactor, _fScaleFactor))
+        for sObjIn in lObjIn:
+            objIn = bpy.data.objects[sObjIn]
+            objIn.scale *= mathutils.Vector((_fScaleFactor, _fScaleFactor, _fScaleFactor))
+        # endfor
     # endif
 
     if _bDoSetOrigin is True:
-        ops.SetOriginByType(objIn, _sOriginType=_sSetOriginType, _sCenter=_sSetOriginCenter)
+        for sObjIn in lObjIn:
+            objIn = bpy.data.objects[sObjIn]
+            ops.SetOriginByType(objIn, _sOriginType=_sSetOriginType, _sCenter=_sSetOriginCenter)
+        # endfor
     # endif
 
     if isinstance(_lLocation, list):
         if len(_lLocation) != 3:
             raise RuntimeError(f"Invalid location for object: {_lLocation}")
         # endif
-        objIn.location = mathutils.Vector(_lLocation)
+        for sObjIn in lObjIn:
+            objIn = bpy.data.objects[sObjIn]
+            objIn.location = mathutils.Vector(_lLocation)
+        # endfor
     # endif
 
     if isinstance(_lRotationEuler_deg, list):
@@ -788,18 +889,39 @@ def ImportObjectAny(
             raise RuntimeError(f"Invalid rotation for object: {_lRotationEuler_deg}")
         # endif
         lRot_rad = [math.radians(x) for x in _lRotationEuler_deg]
-        objIn.rotation_euler = mathutils.Vector(lRot_rad)
+
+        for sObjIn in lObjIn:
+            objIn = bpy.data.objects[sObjIn]
+            objIn.rotation_euler = mathutils.Vector(lRot_rad)
+        # endfor
     # endif
 
     if isinstance(_fScaleFactor, float) or _bDoSetOrigin is True:
-        ops.ApplyTransforms(objIn)
+        for sObjIn in lObjIn:
+            objIn = bpy.data.objects[sObjIn]
+            ops.ApplyTransforms(objIn)
+        # endfor
     # enddef
 
+    # print(lObjIn)
     if isinstance(_sNewName, str):
-        objIn.name = _sNewName
+        lNewObjIn: list[str] = []
+        if len(lObjIn) > 1:
+            for iIdx, sObjIn in enumerate(lObjIn):
+                objIn = bpy.data.objects[sObjIn]
+                objIn.name = f"{_sNewName}-{iIdx}"
+                lNewObjIn.append(objIn.name)
+            # endfor
+        elif len(lObjIn) == 1:
+            objIn = bpy.data.objects[lObjIn[0]]
+            objIn.name = _sNewName
+            lNewObjIn.append(objIn.name)
+        # endif
+        lObjIn = lNewObjIn
     # endif
+    # print(lObjIn)
 
-    return objIn
+    return lObjIn
 
 
 # enddef

@@ -282,15 +282,15 @@ def SetNewMaterial(
 
 
 ######################################################
-def ImportToScene_Obj(_pathFile: Path) -> bpy.types.Object:
+def ImportToScene_Obj(_pathFile: Path) -> list[str]:
     xCtx = bpy.context.copy()
 
-    objIn: bpy.types.Object
+    lObjIn: list[str]
     with bpy.context.temp_override(**xCtx):
         # If an object is imported into a collection that is not visible in the current
         # view layer, it is not an element of 'bpy.context.selected_objects' after import.
         # Therefore, we store the names of all objects before import, and
-        # then look for the one object that is not in that set, after import.
+        # then look for the objects that are not in that set, after import.
         setObj: set[str] = set([x.name for x in bpy.data.objects])
 
         setRes = bpy.ops.import_scene.obj(filepath=_pathFile.as_posix())
@@ -299,30 +299,30 @@ def ImportToScene_Obj(_pathFile: Path) -> bpy.types.Object:
             raise RuntimeError(f"Error importing object from path: {(_pathFile.as_posix())}")
         # endif
 
-        objIn: bpy.types.Object = next((x for x in bpy.data.objects if x.name not in setObj), None)
-        if objIn is None:
-            raise RuntimeError(f"Error importing object from path: {(_pathFile.as_posix())}")
+        lObjIn = [x.name for x in bpy.data.objects if x.name not in setObj]
+        if len(lObjIn) == 0:
+            raise RuntimeError(f"Error importing object(s) from path: {(_pathFile.as_posix())}")
         # endif
     # endwith
 
     viewlayer.Update()
 
-    return objIn
+    return lObjIn
 
 
 # enddef
 
 
 ######################################################
-def ImportToScene_Fbx(_pathFile: Path) -> bpy.types.Object:
+def ImportToScene_Fbx(_pathFile: Path) -> list[str]:
     xCtx = bpy.context.copy()
 
-    objIn: bpy.types.Object
+    lObjIn: list[str]
     with bpy.context.temp_override(**xCtx):
         # If an object is imported into a collection that is not visible in the current
         # view layer, it is not an element of 'bpy.context.selected_objects' after import.
         # Therefore, we store the names of all objects before import, and
-        # then look for the one object that is not in that set, after import.
+        # then look for the objects that are not in that set, after import.
         setObj: set[str] = set([x.name for x in bpy.data.objects])
 
         setRes = bpy.ops.import_scene.fbx(filepath=_pathFile.as_posix())
@@ -331,15 +331,47 @@ def ImportToScene_Fbx(_pathFile: Path) -> bpy.types.Object:
             raise RuntimeError(f"Error importing object from path: {(_pathFile.as_posix())}")
         # endif
 
-        objIn: bpy.types.Object = next((x for x in bpy.data.objects if x.name not in setObj), None)
-        if objIn is None:
-            raise RuntimeError(f"Error importing object from path: {(_pathFile.as_posix())}")
+        lObjIn = [x.name for x in bpy.data.objects if x.name not in setObj]
+        if len(lObjIn) == 0:
+            raise RuntimeError(f"Error importing object(s) from path: {(_pathFile.as_posix())}")
         # endif
     # endwith
 
     viewlayer.Update()
 
-    return objIn
+    return lObjIn
+
+
+# enddef
+
+
+######################################################
+def ImportToScene_Glb(_pathFile: Path) -> list[str]:
+    xCtx = bpy.context.copy()
+
+    lObjIn: list[str]
+    with bpy.context.temp_override(**xCtx):
+        # If an object is imported into a collection that is not visible in the current
+        # view layer, it is not an element of 'bpy.context.selected_objects' after import.
+        # Therefore, we store the names of all objects before import, and
+        # then look for the objects that are not in that set, after import.
+        setObj: set[str] = set([x.name for x in bpy.data.objects])
+
+        setRes = bpy.ops.import_scene.gltf(filepath=_pathFile.as_posix())
+        # print(f"Importing '{(_pathFile.as_posix())}' -> {setRes}")
+        if setRes.pop() != "FINISHED":
+            raise RuntimeError(f"Error importing object from path: {(_pathFile.as_posix())}")
+        # endif
+
+        lObjIn = [x.name for x in bpy.data.objects if x.name not in setObj]
+        if len(lObjIn) == 0:
+            raise RuntimeError(f"Error importing object(s) from path: {(_pathFile.as_posix())}")
+        # endif
+    # endwith
+
+    viewlayer.Update()
+
+    return lObjIn
 
 
 # enddef
