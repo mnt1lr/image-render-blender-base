@@ -204,7 +204,12 @@ class CPolygons:
         aWeights = np.array(lWeights)
 
         aCumSum = np.cumsum(aAreas * aWeights)
-        self._aDistribution = aCumSum / aCumSum[-1]
+        # print(f"aCumSum: {aCumSum}")
+        if aCumSum.shape[0] > 0:
+            self._aDistribution = aCumSum / aCumSum[-1]
+        else:
+            self._aDistribution = aCumSum
+        # endif
 
     # enddef
 
@@ -214,7 +219,12 @@ class CPolygons:
             self._CalcWeightAndAreaDistribution()
         # endif
 
-        iPolyId = np.argmax(np.random.uniform() < self._aDistribution)
+        if self._aDistribution.shape[0] > 0:
+            iPolyId = np.argmax(np.random.uniform() < self._aDistribution)
+        else:
+            iPolyId = 0
+        # endif
+        # print(f"iPolyId: {iPolyId}")
         return self.GetRandomPosOnPolyUniformlySimplex(iPolyId)
         # return self.GetRandomPosOnPoly(iPolyId)
 

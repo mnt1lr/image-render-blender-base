@@ -636,8 +636,11 @@ def GetRndPointsOnSurfaceUniformly(
 
     # print(iPlyCnt)
     iPlyCnt = xPolys.iTotalPolyCount
-    # print(iPlyCnt)
-
+    # print(f"xPolys.iTotalPolyCount: {xPolys.iTotalPolyCount}")
+    if iPlyCnt == 0:
+        raise RuntimeError("There are no polynomials to distribute points on")
+    # endif
+    
     # if a camera fov or distance from camera is given,
     # then set the polygon weights according to constraint
     # before generating random points.
