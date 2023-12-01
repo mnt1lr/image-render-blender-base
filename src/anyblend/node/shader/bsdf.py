@@ -43,10 +43,14 @@ from ..grp import ray_to_dir_v2 as modGrpRayToDir
 def RefractionSharp(
     xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xIOR: TData, xNormal: TData
 ) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeBsdfRefraction")
 
-    nodX.distribution = "SHARP"
+    if bpy.app.version[0] > 3:
+        nodX.distribution = "GGX"
+    else:
+        nodX.distribution = "SHARP"
+    # endif
+
     nodX.inputs["Roughness"].default_value = 0.0
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
@@ -65,10 +69,14 @@ def RefractionSharp(
 
 
 def ReflectionSharp(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xNormal: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeBsdfGlossy")
 
-    nodX.distribution = "SHARP"
+    if bpy.app.version[0] > 3:
+        nodX.distribution = "GGX"
+    else:
+        nodX.distribution = "SHARP"
+    # endif
+
     nodX.inputs["Roughness"].default_value = 0.0
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
@@ -88,7 +96,6 @@ def ReflectionSharp(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xNorma
 def RayToDir(
     xSNT: bpy.types.NodeTree, sTitle: str, xIncoming: TData, xOutgoing: TData, xVignetting: TData = None
 ) -> bpy.types.NodeSocket:
-
     ngRef = nutils.Group(xSNT, modGrpRayToDir.Create())
     ngRef.label = sTitle
 
@@ -108,7 +115,6 @@ def RayToDir(
 
 
 def Transparent(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeBsdfTransparent")
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
@@ -125,7 +131,6 @@ def Transparent(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData) -> bpy.typ
 
 
 def Emission(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xStrength: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeEmission")
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
@@ -144,7 +149,6 @@ def Emission(xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xStrength: TD
 def Diffuse(
     xSNT: bpy.types.NodeTree, sTitle: str, xColor: TData, xRoughness: TData = 0.0, xNormal: TData = None
 ) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeBsdfDiffuse")
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs["Color"], xColor)
@@ -165,7 +169,6 @@ def Diffuse(
 
 
 def Mix(xSNT: bpy.types.NodeTree, sTitle: str, xFactor: TData, xBsdfA: TData, xBsdfB: TData) -> bpy.types.NodeSocket:
-
     nodX = xSNT.nodes.new("ShaderNodeMixShader")
 
     nutils._ConnectWithSocket(xSNT, nodX.inputs[0], xFactor)
