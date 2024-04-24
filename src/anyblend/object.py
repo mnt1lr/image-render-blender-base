@@ -134,7 +134,10 @@ def CreateObjectFromMeshData(
 
     meshX.from_pydata(_xMeshData.lVex, _xMeshData.lEdges, _xMeshData.lFaces)
     meshX.update(calc_edges=True)
-    meshX.use_auto_smooth = True
+
+    if hasattr(meshX, "use_auto_smooth"):
+        meshX.use_auto_smooth = True
+    # endif
 
     bm: bmesh.types.BMesh = bmesh.new()
     bm.from_mesh(meshX)
@@ -968,14 +971,18 @@ def VoxelRemesh_BakeTexture(
     tNodeSpaceSmall = (30, 15)
 
     mshIn: bpy.types.Mesh = _objIn.data
-    mshIn.use_auto_smooth = False
-
+    if hasattr(mshIn, "use_auto_smooth"):
+        mshIn.use_auto_smooth = False
+    # endif
+    
     objLp: bpy.types.Object = ops.Duplicate(_objIn)
     if _sLowPolyObjName is not None and isinstance(_sLowPolyObjName, str):
         objLp.name = _sLowPolyObjName
     # endif
     mshLp: bpy.types.Mesh = objLp.data
-    mshLp.use_auto_smooth = False
+    if hasattr(mshLp, "use_auto_smooth"):
+        mshLp.use_auto_smooth = False
+    # endif
 
     # ########################################################################################
     # Remesh & Smooth to create low poly object
