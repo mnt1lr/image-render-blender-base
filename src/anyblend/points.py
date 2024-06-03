@@ -62,9 +62,16 @@ def GetRndPointsOnSurface(
     xObstacles: Optional[CInstances] = None,
 ) -> dict:
     """Create the given number of points at random positions on the surface.
+
        Takes into account the vertex weights of the given vertex group, if set.
        If instances are given to distribute on the surface, the delta to their
        current location is returned.
+
+    Example:
+    ```python
+        from anybase import points
+        points.GetRndPointsOnSurface(lTrgObjNames=["Cube"], iPntCnt=1)
+    ```
 
     Args:
         lTrgObjNames (str):
@@ -186,6 +193,8 @@ def GetRndPointsOnSurface(
         if len(lInstOrig) != 3:
             raise RuntimeError("Instance origin list must be of length three")
         # endif
+    elif xInstanceOrigin is None:
+        lInstOrig = [0,0,-0.5]
     else:
         raise RuntimeError(f"Invalid instance origin argument: {xInstanceOrigin}")
     # endif
@@ -640,7 +649,7 @@ def GetRndPointsOnSurfaceUniformly(
     if iPlyCnt == 0:
         raise RuntimeError("There are no polynomials to distribute points on")
     # endif
-    
+
     # if a camera fov or distance from camera is given,
     # then set the polygon weights according to constraint
     # before generating random points.
