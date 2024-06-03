@@ -146,7 +146,7 @@ def GetRndPointsOnSurface(
             for a point. Defaults to 20.
 
     Returns:
-        list: A list of vectors of type mathutils.Vector, giving positions on the surface.
+        dict: A list of vectors of type mathutils.Vector, giving positions on the surface.
     """
     if iSeed is not None:
         random.seed(iSeed)
