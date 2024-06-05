@@ -80,6 +80,24 @@ def GetRootCollection(_xContext):
 
 #################################################################
 def GetCollection(_sName: str, bDoThrow: bool = False) -> bpy.types.Collection:
+    """
+    Retrieves a Blender collection by name.
+    Example:
+    ```python
+        from anyblend import collection
+        collection.GetCollection("Collection")
+    ```
+    Args:
+        _sName (str): The name of the collection to retrieve.
+        bDoThrow (bool, optional): If True, raises a RuntimeError if the
+        collection is not found. Defaults to False.
+
+    Returns:
+        bpy.types.Collection: The retrieved collection, or None if not found.
+        
+    Raises:
+        RuntimeError: If the collection is not found and bDoThrow is True.
+    """
     clnAct = bpy.data.collections.get(_sName)
     if clnAct is None and bDoThrow:
         raise RuntimeError("Collection '{}' not found".format(_sName))
