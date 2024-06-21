@@ -31,7 +31,7 @@ from typing import Union
 
 
 #################################################################
-def GetActiveLayerCollection(_xContext):
+def GetActiveLayerCollection(_xContext: bpy.types.Context):
     return _xContext.view_layer.active_layer_collection
 
 
@@ -40,6 +40,22 @@ def GetActiveLayerCollection(_xContext):
 
 #################################################################
 def GetActiveCollection(_xContext: bpy.types.Context) -> bpy.types.Collection:
+    """Function that returns active layer collection
+    Example:
+    ```python
+    from anyblend import collection
+    collection.GetActiveLayerCollection(bpy.context)
+    ```
+    Parameters
+    ----------
+    _xContext : bpy.types.Context
+        https://docs.blender.org/api/current/bpy.context.html#module-bpy.context
+
+    Returns
+    -------
+    bpy.types.Collection
+        _description_
+    """
     return GetActiveLayerCollection(_xContext).collection
 
 
@@ -55,7 +71,7 @@ def SetActiveLayerCollection(_xContext, _xLayCol):
 
 
 #################################################################
-def MakeRootLayerCollectionActive(_xContext):
+def MakeRootLayerCollectionActive(_xContext: bpy.types.Context):
     _xContext.view_layer.active_layer_collection = _xContext.view_layer.layer_collection
 
 
