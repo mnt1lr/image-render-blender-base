@@ -79,7 +79,7 @@ def MakeRootLayerCollectionActive(_xContext: bpy.types.Context):
 
 
 #################################################################
-def GetRootLayerCollection(_xContext):
+def GetRootLayerCollection(_xContext: bpy.types.Context):
     return _xContext.view_layer.layer_collection
 
 
@@ -87,7 +87,7 @@ def GetRootLayerCollection(_xContext):
 
 
 #################################################################
-def GetRootCollection(_xContext):
+def GetRootCollection(_xContext: bpy.types.Context):
     return _xContext.view_layer.layer_collection.collection
 
 
@@ -149,7 +149,7 @@ def _DoGetParentCollection(_clnStart, _clnX):
 
 
 #################################################################
-def GetParentCollection(_clnX, *, _xContext=None):
+def GetParentCollection(_clnX, *, _xContext: bpy.types.Context = None):
     if _xContext is None:
         _xContext = bpy.context
     # endif
@@ -210,16 +210,28 @@ def GetCollectionObjects(
 
 #################################################################
 def FindObjectInCollection(_clX, _objX):
+    """
+    Recursively searches for an object in a collection and its children.
+    Example:
+    ```python
+    from anyblend import collection
+    collection.FindObjectInCollection(bpy.data.scenes['Scene'].collection, bpy.data.objects['Cube'])
+    ```
+    Parameters:
+    _clX (bpy.types.Collection): The collection to search in.
+    _objX (bpy.types.Object): The object to find.
+
+    Returns:
+    tuple: A tuple containing the collection (_clX) and the object (_objX) if found, otherwise (None, None).
+    """
+
     if _objX.name in _clX.objects:
         return _clX, _objX
-    # endif
 
     for clChild in _clX.children:
         clX, objX = FindObjectInCollection(clChild, _objX)
         if objX is not None:
             return clX, objX
-        # endif
-    # endfor
 
     return None, None
 
@@ -228,7 +240,7 @@ def FindObjectInCollection(_clX, _objX):
 
 
 #################################################################
-def FindCollectionOfObject(_xContext, _objX):
+def FindCollectionOfObject(_xContext: bpy.types.Context, _objX):
     clRoot = GetRootLayerCollection(_xContext).collection
     clX, objX = FindObjectInCollection(clRoot, _objX)
 
@@ -258,7 +270,7 @@ def _DoFindParentCollectionOfCollection(_clnParent, _clnChild):
 
 
 #################################################################
-def FindParentCollectionOfCollection(_xContext, _clnChild) -> bpy.types.Collection:
+def FindParentCollectionOfCollection(_xContext: bpy.types.Context, _clnChild) -> bpy.types.Collection:
     clnRoot = GetRootLayerCollection(_xContext).collection
     clnParent, clnChild = _DoFindParentCollectionOfCollection(clnRoot, _clnChild)
 
@@ -297,7 +309,21 @@ def FindLayerCollection(_xLayCol, _sName):
 
 
 #################################################################
-def SetActiveCollection(_xContext, _sName):
+def SetActiveCollection(_xContext: bpy.types.Context, _sName: str) -> bpy.types.Collection:
+    """Set the collection _sName to active
+
+    Parameters
+    ----------
+    _xContext : : bpy.types.Context
+        _description_
+    _sName : str
+        Name of the collection to be set as active
+
+    Raises
+    ------
+    Exception
+        _description_
+    """
     xLC = FindLayerCollection(_xContext.view_layer.layer_collection, _sName)
     if xLC is not None:
         _xContext.view_layer.active_layer_collection = xLC
@@ -310,7 +336,7 @@ def SetActiveCollection(_xContext, _sName):
 
 
 #################################################################
-def IsExcluded(_xContext, _sName):
+def IsExcluded(_xContext: bpy.types.Context, _sName: str):
     xLC = FindLayerCollection(_xContext.view_layer.layer_collection, _sName)
     return xLC.exclude
 
@@ -319,7 +345,7 @@ def IsExcluded(_xContext, _sName):
 
 
 #################################################################
-def ExcludeCollection(_xContext, _sName, _bExclude=True):
+def ExcludeCollection(_xContext: bpy.types.Context, _sName: str, _bExclude=True):
     xLC = FindLayerCollection(_xContext.view_layer.layer_collection, _sName)
     if xLC is not None:
         xLC.exclude = _bExclude
@@ -332,7 +358,7 @@ def ExcludeCollection(_xContext, _sName, _bExclude=True):
 
 
 #################################################################
-def ProvideCollection(_xContext, _sName, bActivate=True, clnParent=None, bEnsureLayerCollectionExists=False):
+def ProvideCollection(_xContext: bpy.types.Context, _sName: str, bActivate: bool = True, clnParent=None, bEnsureLayerCollectionExists=False):
     # There was a case, where the collection already existed but without
     # an associated layer collection. In this case, we need to delete the
     # collection and re-create it.
@@ -360,7 +386,29 @@ def ProvideCollection(_xContext, _sName, bActivate=True, clnParent=None, bEnsure
 
 
 #################################################################
-def CreateCollection(_xContext, _sName, bActivate=True, clnParent=None):
+def CreateCollection(_xContext: bpy.types.Context, _sName: str, bActivate: bool = True, clnParent=None)-> bpy.types.Collection:
+    """Create new collection and make it child of clnParent
+    Example:
+    ```python	
+    from anyblend import collection
+    collection.CreateCollection(bpy.context, "MyCollection")
+    ```
+    Parameters
+    ----------
+    _xContext : bpy.types.Context
+        _description_
+    _sName : str
+        _description_
+    bActivate : bool, optional
+        _description_, by default True
+    clnParent : _type_, optional
+        _description_, by default None
+
+    Returns
+    -------
+    bpy.types.Collection
+        Returns the created collection
+    """
     if clnParent is None:
         xColAct = GetActiveCollection(_xContext)
     else:
@@ -449,7 +497,7 @@ def CreateCollectionHierarchy(
 
 
 #################################################################
-def MoveObjectToActiveCollection(_xContext, _objX, bMoveObjectHierarchy=True):
+def MoveObjectToActiveCollection(_xContext: bpy.types.Context, _objX, bMoveObjectHierarchy: bool = True):
     clnAct = GetActiveCollection(_xContext)
     clnObj = FindCollectionOfObject(_xContext, _objX)
 
@@ -476,11 +524,11 @@ def MoveObjectToActiveCollection(_xContext, _objX, bMoveObjectHierarchy=True):
 
 #################################################################
 def AddObjectToCollectionHierarchy(
-    _xContext,
+    _xContext: bpy.types.Context,
     _objX,
     _lCollectionHierarchy,
-    bCreateHierarchyNames=True,
-    bMoveObjectHierarchy=True,
+    bCreateHierarchyNames: bool = True,
+    bMoveObjectHierarchy: bool = True,
 ):
     """Generates hierarchy of collections from lCollectionHierarchy if not
     already existing. Unlinks object from collection it is in and links it to last level of hierarchy
@@ -511,7 +559,7 @@ def AddObjectToCollectionHierarchy(
 
 
 #################################################################
-def _RemoveCollection(xColl, bRecursive=True, bRemoveObjects=True):
+def _RemoveCollection(xColl, bRecursive: bool = True, bRemoveObjects: bool = True):
     # print(f"> Cln: {xColl.name}")
     if bRemoveObjects:
         lObj = [x for x in xColl.objects if x.users <= 1]
@@ -570,7 +618,7 @@ def RemoveCollection(
 
 
 #################################################################
-def _RemoveCollectionObjects(xColl, bRecursive=True):
+def _RemoveCollectionObjects(xColl, bRecursive: bool = True):
     lObj = [x for x in xColl.objects if x.users <= 1]
     for xObj in lObj:
         bpy.data.objects.remove(xObj)
@@ -588,7 +636,7 @@ def _RemoveCollectionObjects(xColl, bRecursive=True):
 
 
 #################################################################
-def RemoveCollectionObjects(_sName, bRecursive=True, bRemoveOrphaned=True, bIgnoreFakeUser=False):
+def RemoveCollectionObjects(_sName: str, bRecursive:bool = True, bRemoveOrphaned=True, bIgnoreFakeUser=False):
     xColl = bpy.data.collections.get(_sName)
     if xColl is None:
         raise Exception("Collection '{0}' not found.".format(_sName))
